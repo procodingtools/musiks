@@ -1,17 +1,14 @@
+import 'dart:io' as IO;
 import 'dart:ui';
 
 import 'package:flute_music_player/flute_music_player.dart';
 import 'package:flutter/material.dart';
+import 'package:image/image.dart' as ImConvert;
 import 'package:musiks/ui/main_screen.dart';
 import 'package:musiks/utils/blocs/player_bloc/player_bloc.dart';
-import 'package:musiks/utils/blocs/player_bloc/player_event.dart';
 import 'package:musiks/utils/res/dimens.dart';
 import 'package:musiks/utils/utils.dart';
 import 'package:simple_permissions/simple_permissions.dart' as Perm;
-import 'package:image/image.dart' as ImConvert;
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'dart:io' as IO;
-import 'package:media_notification/media_notification.dart';
 
 class SplashScreen extends StatefulWidget {
   createState() => _SplashState();

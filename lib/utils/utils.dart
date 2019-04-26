@@ -1,7 +1,5 @@
 import 'package:flute_music_player/flute_music_player.dart';
-import 'package:flutter/animation.dart';
 import 'package:media_notification/media_notification.dart';
-import 'package:rubber/rubber.dart';
 
 
 
