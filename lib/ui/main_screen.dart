@@ -39,8 +39,8 @@ class _MainState extends State<MainScreen> with TickerProviderStateMixin {
     _playerBloc = PlayerBloc();
 
     if (widget.song != null){
-      _playerBloc.dispatch(SetCurrentSong(widget.song));
-      _playerBloc.dispatch(SetIsPlaying(true));
+      _playerBloc.add(SetCurrentSong(widget.song));
+      _playerBloc.add(SetIsPlaying(true));
     }
 
     _animationController = AnimationController(
@@ -68,7 +68,7 @@ class _MainState extends State<MainScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     // TODO: implement build
-    return BlocBuilder<PlayerEvent, PlayerState>(
+    return BlocBuilder(
         bloc: _playerBloc,
         builder: (context, state) {
           return Scaffold(
@@ -197,9 +197,9 @@ class _MainState extends State<MainScreen> with TickerProviderStateMixin {
                           radioName: itemsList[index].name,
                         )));
               } else {
-                _playerBloc.dispatch(SetCurrentSong(Utils.songs[index]));
-                _playerBloc.dispatch(SetIsPlaying(true));
-                _playerBloc.dispatch(SetSongsList(Utils.songs));
+                _playerBloc.add(SetCurrentSong(Utils.songs[index]));
+                _playerBloc.add(SetIsPlaying(true));
+                _playerBloc.add(SetSongsList(Utils.songs));
                 Utils.audioPlayer.stop();
                 Utils.audioPlayer.play(Utils.songs[index].uri);
                 Utils.showNotif(
@@ -431,9 +431,9 @@ class _MainState extends State<MainScreen> with TickerProviderStateMixin {
               mainAxisSize: MainAxisSize.max,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                MaterialButton(onPressed: () {
+                /*MaterialButton(onPressed: () {
                   Navigator.push(context, MaterialPageRoute(builder: (context) => EqualizerScreen()));
-                }, child: Text("equalizer"),),
+                }, child: Text("equalizer"),),*/
                 _renderAlbums(),
                 _renderArtists(),
                 _renderAllSongs(),

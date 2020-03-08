@@ -76,9 +76,9 @@ class _PlayerBottomSheetState extends State<PlayerBottomSheet> {
     _rubberController.addListener(() {
       setState(() {
         if (_rubberController.value > .2)
-          _playerBloc.dispatch(ExpandBottomSheet(true));
+          _playerBloc.add(ExpandBottomSheet(true));
         else
-          _playerBloc.dispatch(ExpandBottomSheet(false));
+          _playerBloc.add(ExpandBottomSheet(false));
       });
     });
 
@@ -89,16 +89,16 @@ class _PlayerBottomSheetState extends State<PlayerBottomSheet> {
 
     Utils.audioPlayer.setOnHeadsetButtonClick((action) {
       if (action == 1)
-        _playPause(_playerBloc.currentState);
+        _playPause(_playerBloc.state);
       else if (action == 2)
-        _nextSong(_playerBloc.currentState);
-      else if (action == 3) _previousSong(_playerBloc.currentState);
+        _nextSong(_playerBloc.state);
+      else if (action == 3) _previousSong(_playerBloc.state);
     });
 
     Utils.audioPlayer.setOnHeadsetPlugListener((status){
-      if (!status && _playerBloc.currentState.isPlaying)
-        _playPause(_playerBloc.currentState);
-        //_playerBloc.dispatch(SetIsPlaying(!status));
+      if (!status && _playerBloc.state.isPlaying)
+        _playPause(_playerBloc.state);
+        //_playerBloc.add(SetIsPlaying(!status));
     });
   }
 
@@ -125,31 +125,31 @@ class _PlayerBottomSheetState extends State<PlayerBottomSheet> {
     MediaNotification.setListener('pause', () {
       print("pause");
       setState(() {
-        _playerBloc.dispatch(SetIsPlaying(false));
+        _playerBloc.add(SetIsPlaying(false));
       });
       Utils.audioPlayer.pause();
     });
 
     MediaNotification.setListener('play', () {
       setState(() {
-        _playerBloc.dispatch(SetIsPlaying(true));
+        _playerBloc.add(SetIsPlaying(true));
       });
-      if (_playerBloc.currentState.currentSong is Song)
+      if (_playerBloc.state.currentSong is Song)
         Utils.audioPlayer.play(
-          _playerBloc.currentState.currentSong.uri,
+          _playerBloc.state.currentSong.uri,
         );
-      else if (_playerBloc.currentState.currentSong is R.Media)
+      else if (_playerBloc.state.currentSong is R.Media)
         Utils.audioPlayer
-            .play(_playerBloc.currentState.currentSong.url, isLocal: false);
+            .play(_playerBloc.state.currentSong.url, isLocal: false);
     });
 
     MediaNotification.setListener('next', () {
       print('next');
-      _nextSong(_playerBloc.currentState);
+      _nextSong(_playerBloc.state);
     });
 
     MediaNotification.setListener('prev', () {
-      _previousSong(_playerBloc.currentState);
+      _previousSong(_playerBloc.state);
     });
 
     MediaNotification.setListener('select', () {});
@@ -164,7 +164,7 @@ class _PlayerBottomSheetState extends State<PlayerBottomSheet> {
           Utils.audioPlayer.stop();
           Utils.hideNotif();
           setState(() {
-            _playerBloc.dispatch(SetIsPlaying(false));
+            _playerBloc.add(SetIsPlaying(false));
           });
           return;
         } else if (state.repeatType == 0) index = 0;
@@ -207,8 +207,8 @@ class _PlayerBottomSheetState extends State<PlayerBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    _setAudioPlayerListeners(_playerBloc.currentState);
-    if (_playerBloc.currentState.isPlaying)
+    _setAudioPlayerListeners(_playerBloc.state);
+    if (_playerBloc.state.isPlaying)
       _vinylRotationController.repeat();
     else
       _vinylRotationController.stop();
@@ -230,7 +230,7 @@ class _PlayerBottomSheetState extends State<PlayerBottomSheet> {
         animationController: _rubberController,
         lowerLayer: Container(),
         //header: Container(color: Colors.green,),
-        upperLayer: _renderBottomSheet(_playerBloc.currentState),
+        upperLayer: _renderBottomSheet(_playerBloc.state),
       ),
     );
   }
@@ -263,7 +263,7 @@ class _PlayerBottomSheetState extends State<PlayerBottomSheet> {
     return InkWell(
       onTap: () {
           _rubberController.expand();
-          _playerBloc.dispatch(ExpandBottomSheet(true));
+          _playerBloc.add(ExpandBottomSheet(true));
       },
       child: Center(
         child: Row(
@@ -479,7 +479,7 @@ class _PlayerBottomSheetState extends State<PlayerBottomSheet> {
                 else
                   repeatType++;
                 setState(() {
-                  _playerBloc.dispatch(SetRepeatType(repeatType));
+                  _playerBloc.add(SetRepeatType(repeatType));
                 });
               }
             },
@@ -538,7 +538,7 @@ class _PlayerBottomSheetState extends State<PlayerBottomSheet> {
             onTap: () {
               if (state.currentSong is Song)
               setState(() {
-                _playerBloc.dispatch(ToggleShuffle());
+                _playerBloc.add(ToggleShuffle());
               });
             },
             child: Padding(
@@ -615,12 +615,12 @@ class _PlayerBottomSheetState extends State<PlayerBottomSheet> {
   void _playPause(PlayerState state) {
     setState(() {
       if (!state.isPlaying && state.currentSong != null) {
-        _playerBloc.dispatch(SetIsPlaying(true));
+        _playerBloc.add(SetIsPlaying(true));
         Utils.showNotif(state.currentSong.title, state.currentSong is Song ? state.currentSong.album : state.currentSong.of, true);
         _audioPlayer.play( state.currentSong is Song ? state.currentSong.uri : state.currentSong.url);
         _vinylRotationController.repeat();
       } else if (state.isPlaying) {
-        _playerBloc.dispatch(SetIsPlaying(false));
+        _playerBloc.add(SetIsPlaying(false));
         Utils.showNotif(
             state.currentSong.title, state.currentSong is Song ? state.currentSong.album : state.currentSong.of, false);
         _audioPlayer.pause();

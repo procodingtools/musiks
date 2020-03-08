@@ -12,19 +12,19 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState>{
   Stream<PlayerState> mapEventToState(PlayerEvent event) async*{
     print("event trying to yield:    " + event.toString());
     if (event is SetIsPlaying)
-      yield currentState..isPlaying = event.isPlaying;
+      yield state..isPlaying = event.isPlaying;
     else if (event is SetCurrentSong) {
       print("setted current song is:   " + event.song.toString());
-      yield currentState..currentSong = event.song;
+      yield state..currentSong = event.song;
     }
     else if (event is SetSongsList)
-      yield currentState..songs = event.songs;
+      yield state..songs = event.songs;
     else if(event is ToggleShuffle)
-      currentState..shuffle = !currentState.shuffle;
+      state..shuffle = !state.shuffle;
     else if (event is SetRepeatType)
-      yield currentState..repeatType = event.repeat;
+      yield state..repeatType = event.repeat;
     else if (event is ExpandBottomSheet)
-      yield currentState..bottomSheetExpanded = event.expand;
+      yield state..bottomSheetExpanded = event.expand;
   }
 
 }

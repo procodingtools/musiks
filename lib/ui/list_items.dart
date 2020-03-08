@@ -153,9 +153,9 @@ class _ListItemsState extends State<ListItems> with TickerProviderStateMixin {
                 .add(Duration(milliseconds: song.duration));
             return InkWell(
               onTap: () {
-                _playerBloc.dispatch(SetCurrentSong(song));
-                _playerBloc.dispatch(SetIsPlaying(true));
-                _playerBloc.dispatch(SetSongsList(_songs));
+                _playerBloc.add(SetCurrentSong(song));
+                _playerBloc.add(SetIsPlaying(true));
+                _playerBloc.add(SetSongsList(_songs));
                 Utils.audioPlayer.stop();
                 Utils.audioPlayer.play(song.uri);
                 setState(() {});

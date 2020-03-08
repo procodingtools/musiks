@@ -115,9 +115,9 @@ class _RadioGridItemsState extends State<RadioGridItems> with TickerProviderStat
                                     onTap: () {
                                       //TODO: play selected radio
 
-                                      _playerBloc.dispatch(SetCurrentSong(_radios[index]));
-                                      _playerBloc.dispatch(SetIsPlaying(true));
-                                      _playerBloc.dispatch(SetSongsList(null));
+                                      _playerBloc.add(SetCurrentSong(_radios[index]));
+                                      _playerBloc.add(SetIsPlaying(true));
+                                      _playerBloc.add(SetSongsList(null));
                                       Utils.audioPlayer.stop();
                                       Utils.audioPlayer.play(_radios[index].url, isLocal: false);
                                       Utils.showNotif(

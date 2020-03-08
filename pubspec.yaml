@@ -31,10 +31,10 @@ dependencies:
   media_notification: ^0.0.5
   flutter_bloc:
   path_provider:
-  dio: ^2.1.3
+  dio: ^3.0.9
   flutter_multi_carousel: ^1.0.1
-  flutter_advanced_networkimage: ^0.4.15
-  cached_network_image: ^0.7.0
+  flutter_advanced_networkimage: ^0.6.0-alpha.1
+  cached_network_image: ^2.0.0-rc.1
 
 
 
