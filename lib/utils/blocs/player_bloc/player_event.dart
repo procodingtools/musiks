@@ -1,4 +1,5 @@
 import 'package:flute_music_player/flute_music_player.dart';
+import 'package:musiks/utils/entities/media.dart';
 
 class PlayerEvent{}
 
@@ -10,8 +11,7 @@ class SetIsPlaying extends PlayerEvent{
 }
 
 class SetCurrentSong extends PlayerEvent{
-  final Song song;
-
+  final dynamic song;
   SetCurrentSong(this.song);
 }
 

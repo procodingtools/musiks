@@ -24,13 +24,12 @@ class ListItems extends StatefulWidget {
   createState() => _ListItemsState();
 }
 
-class _ListItemsState extends State<ListItems> with TickerProviderStateMixin{
+class _ListItemsState extends State<ListItems> with TickerProviderStateMixin {
   final _width = Dimens.width, _height = Dimens.height;
 
   List<Song> _songs = List();
   String _cover = '';
   PlayerBloc _playerBloc;
-
 
   @override
   void initState() {
@@ -43,14 +42,17 @@ class _ListItemsState extends State<ListItems> with TickerProviderStateMixin{
       _cover = Songs.albumArts[widget.item];
     else if (widget.from == 'artists') _cover = Songs.artistsArt[widget.item];
 
-    Utils.songs.forEach((song) {
-      if (widget.from == "My albums" && song.album == widget.item)
-        _songs.add(song);
-      else if (widget.from == "artists" && song.artist == widget.item) {
-        _songs.add(song);
-      }
-    });
-    }
+    if (widget.from == "all")
+      _songs = Utils.songs;
+    else
+      Utils.songs.forEach((song) {
+        if (widget.from == "My albums" && song.album == widget.item)
+          _songs.add(song);
+        else if (widget.from == "artists" && song.artist == widget.item) {
+          _songs.add(song);
+        }
+      });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,11 +65,14 @@ class _ListItemsState extends State<ListItems> with TickerProviderStateMixin{
             height: double.infinity,
             decoration: BoxDecoration(
                 image: DecorationImage(
-                    image: AssetImage('assets/background.png'))),
+              image: AssetImage('assets/background.png'),
+              fit: BoxFit.cover,
+              alignment: Alignment.topCenter,
+            )),
             child: SafeArea(
               child: Padding(
                 padding: EdgeInsets.only(
-                    top: _height * .07, bottom: Dimens.height * .13),
+                    top: _height * .07, bottom: Dimens.height * .11),
                 child: Column(
                   mainAxisSize: MainAxisSize.max,
                   mainAxisAlignment: MainAxisAlignment.start,
@@ -80,7 +85,10 @@ class _ListItemsState extends State<ListItems> with TickerProviderStateMixin{
               ),
             ),
           ),
-          PlayerBottomSheet(tickerProvider: this, bloc: _playerBloc,),
+          PlayerBottomSheet(
+            vsync: this,
+            bloc: _playerBloc,
+          ),
         ],
       ),
     );
@@ -88,25 +96,30 @@ class _ListItemsState extends State<ListItems> with TickerProviderStateMixin{
 
   Widget _albumCover() {
     return SizedBox(
-      height: _height * .2,
+      height: widget.from != 'all' ? _height * .2 : _height * .13,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Container(
-            decoration: BoxDecoration(color: AppColors.yellow),
-            padding: EdgeInsets.all(2.0),
-            child: Hero(
-                tag: widget.item,
-                child: _cover != null
-                    ? Image.file(
-                        IO.File(_cover),
-                        fit: BoxFit.fill,
-                      )
-                    : Image.asset(
-                        'assets/musiks_disk_sticker.png',
-                        fit: BoxFit.contain,
-                      )),
-          ),
+          Hero(
+              tag: widget.item ?? '',
+              child: widget.from == 'all'
+                  ? Image.asset(
+                      "assets/note.png",
+                      width: Dimens.width * .15,
+                    )
+                  : _cover != null
+                      ? Image.file(
+                          IO.File(_cover),
+                          fit: BoxFit.cover,
+                          height: widget.from != 'all' ? _height * .2 : _height * .13,
+                          width: widget.from != 'all' ? _height * .2 : _height * .13,
+                        )
+                      : Image.asset(
+                          'assets/musiks_disk_sticker.png',
+                          fit: BoxFit.cover,
+                          height: widget.from != 'all' ? _height * .2 : _height * .13,
+                          width: widget.from != 'all' ? _height * .2 : _height * .13,
+                        )),
           widget.from == "My albums"
               ? Stack(
                   children: <Widget>[
@@ -132,7 +145,7 @@ class _ListItemsState extends State<ListItems> with TickerProviderStateMixin{
   Widget _renderSongsList() {
     return Expanded(
       child: Padding(
-        padding: const EdgeInsets.only(top: 10.0, right: 10.0, left: 10.0),
+        padding: const EdgeInsets.only(top: 10.0),
         child: ListView.builder(
           itemBuilder: (context, index) {
             final song = _songs[index];
@@ -145,59 +158,62 @@ class _ListItemsState extends State<ListItems> with TickerProviderStateMixin{
                 _playerBloc.dispatch(SetSongsList(_songs));
                 Utils.audioPlayer.stop();
                 Utils.audioPlayer.play(song.uri);
-                Utils.showNotif(song.title, song.album, true);
-                setState(() {
-                });
+                setState(() {});
               },
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 15.0),
-                margin: EdgeInsets.only(bottom: 5.0),
-                color: AppColors.purple,
-                height: 80.0,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.max,
-                  children: <Widget>[
-                    Container(
-                      padding: EdgeInsets.all(2.0),
-                      decoration: BoxDecoration(
-                          shape: BoxShape.circle, color: AppColors.white),
-                      child: CircleAvatar(
-                        backgroundImage: song.albumArt != null
-                            ? FileImage(IO.File(song.albumArt))
-                            : AssetImage("assets/musiks_disk_sticker.png"),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 20.0),
-                      child: SizedBox(
-                          width: _width * .65,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              ScrollableText(
-                                  child: Text(
-                                song.title,
-                                style: TextStyle(
-                                    color: AppColors.white,
-                                    fontFamily: "montserrat",
-                                    fontSize: 15.0),
+              child: ClipRect(
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 15.0),
+                  margin: EdgeInsets.only(bottom: 5.0),
+                  color: AppColors.purple.withOpacity(.7),
+                  height: 80.0,
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 50.0, sigmaY: 50.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.max,
+                      children: <Widget>[
+                        Container(
+                          padding: EdgeInsets.all(2.0),
+                          decoration: BoxDecoration(
+                              shape: BoxShape.circle, color: AppColors.white),
+                          child: CircleAvatar(
+                            backgroundImage: song.albumArt != null
+                                ? FileImage(IO.File(song.albumArt))
+                                : AssetImage("assets/musiks_disk_sticker.png"),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 20.0),
+                          child: SizedBox(
+                              width: _width * .65,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  ScrollableText(
+                                      child: Text(
+                                    song.title,
+                                    style: TextStyle(
+                                        color: AppColors.white,
+                                        fontFamily: "montserrat",
+                                        fontSize: 15.0),
+                                  )),
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: Text(
+                                      formatDate(duration, [nn, ':', ss]),
+                                      style: TextStyle(
+                                          color: AppColors.white,
+                                          fontFamily: "montserrat",
+                                          fontSize: 10.0),
+                                    ),
+                                  )
+                                ],
                               )),
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8.0),
-                                child: Text(
-                                  formatDate(duration, [nn, ':', ss]),
-                                  style: TextStyle(
-                                      color: AppColors.white,
-                                      fontFamily: "montserrat",
-                                      fontSize: 10.0),
-                                ),
-                              )
-                            ],
-                          )),
-                    )
-                  ],
+                        )
+                      ],
+                    ),
+                  ),
                 ),
               ),
             );

@@ -10,10 +10,13 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState>{
 
   @override
   Stream<PlayerState> mapEventToState(PlayerEvent event) async*{
+    print("event trying to yield:    " + event.toString());
     if (event is SetIsPlaying)
       yield currentState..isPlaying = event.isPlaying;
-    else if (event is SetCurrentSong)
+    else if (event is SetCurrentSong) {
+      print("setted current song is:   " + event.song.toString());
       yield currentState..currentSong = event.song;
+    }
     else if (event is SetSongsList)
       yield currentState..songs = event.songs;
     else if(event is ToggleShuffle)

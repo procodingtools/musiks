@@ -36,15 +36,17 @@ class _ScrollableTextState extends State<ScrollableText> {
   }
 
   void scroll() async {
-    while (true) {
-      await Future.delayed(widget.pauseDuration);
-      await scrollController.animateTo(
-          scrollController.position.maxScrollExtent,
-          duration: widget.animationDuration,
-          curve: Curves.easeInOut);
-      await Future.delayed(widget.pauseDuration);
-      await scrollController.animateTo(0.0,
-          duration: widget.backDuration, curve: Curves.easeInOut);
-    }
+    try {
+      while (true) {
+        await Future.delayed(widget.pauseDuration);
+        await scrollController.animateTo(
+            scrollController.position.maxScrollExtent,
+            duration: widget.animationDuration,
+            curve: Curves.easeInOut);
+        await Future.delayed(widget.pauseDuration);
+        await scrollController.animateTo(0.0,
+            duration: widget.backDuration, curve: Curves.easeInOut);
+      }
+    }catch(e){}
   }
 }

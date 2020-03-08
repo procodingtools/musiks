@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io' as IO;
 import 'dart:ui';
 
@@ -5,7 +6,7 @@ import 'package:flute_music_player/flute_music_player.dart';
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as ImConvert;
 import 'package:musiks/ui/main_screen.dart';
-import 'package:musiks/utils/blocs/player_bloc/player_bloc.dart';
+import 'package:musiks/utils/entities/radio_station.dart';
 import 'package:musiks/utils/res/dimens.dart';
 import 'package:musiks/utils/utils.dart';
 import 'package:simple_permissions/simple_permissions.dart' as Perm;
@@ -29,7 +30,7 @@ class _SplashState extends State<SplashScreen> with TickerProviderStateMixin {
   ];
 
   bool _soundsCompleted = false;
-  final _playerBloc = PlayerBloc();
+  Song currentSong;
 
 
   @override
@@ -60,12 +61,15 @@ class _SplashState extends State<SplashScreen> with TickerProviderStateMixin {
 
     Utils.audioPlayer = MusicFinder();
 
-    _getSongs();
+
+    Utils.audioPlayer.setOnCurrentSongUlListener((songUrl) {
+      _getSongs(songUrl: songUrl);
+    });
 
     Future.delayed(Duration(seconds: 6)).then((_) {
       if (_soundsCompleted) {
         Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => MainScreen()));
+            MaterialPageRoute(builder: (context) => MainScreen(song: currentSong,)));
       }
     });
   }
@@ -98,7 +102,7 @@ class _SplashState extends State<SplashScreen> with TickerProviderStateMixin {
   _resizePhoto(String path) async {
     if (path != null) {
       final image = ImConvert.decodeImage(new IO.File(path).readAsBytesSync());
-      final thumbnail = ImConvert.copyResize(image, 300, 300);
+      final thumbnail = ImConvert.copyResize(image, width: 300, height: 300);
       new IO.File(path)..writeAsBytesSync(ImConvert.encodePng(thumbnail));
     }
   }
@@ -175,11 +179,17 @@ class _SplashState extends State<SplashScreen> with TickerProviderStateMixin {
         await Perm.SimplePermissions.checkPermission(Perm.Permission.Camera);
   }
 
-  _getSongs() {
+  _getSongs({String songUrl}) async {
+
     MusicFinder.allSongs().then((songs) {
       Utils.songs = songs;
       for (Song song in songs) {
         //_resizePhoto(song.albumArt);
+        if (songUrl != null) {
+          if (song.uri == songUrl) {
+            this.currentSong = song;
+          }
+        }
         _albums.add(song.album);
         _artists.add(song.artist);
         _dirs.add(song.uri.substring(0, song.uri.lastIndexOf('/')));
@@ -190,8 +200,8 @@ class _SplashState extends State<SplashScreen> with TickerProviderStateMixin {
         }
       }
 
-      _albums.forEach((str) => Songs.albums.add(str));
-      _artists.forEach((str) => Songs.artists.add(str));
+      Songs.albums = _albums.toList();
+      Songs.artists = _artists.toList();
       _dirs.forEach((str) => Songs.dirs.add(str));
       Songs.albumArts = _albumArts;
 
@@ -200,8 +210,12 @@ class _SplashState extends State<SplashScreen> with TickerProviderStateMixin {
       });
       if (_controller.status == AnimationStatus.completed) {
         Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => MainScreen(playerBloc: _playerBloc)));
+            MaterialPageRoute(builder: (context) => MainScreen(song: currentSong)));
       }
     });
+
+    Songs.radioPhotos['nrj'] = "assets/NRJ.png";
+    Utils.radios.add(RadioStation());
+    Utils.radios.add(RadioStation(name: "Tunisia", logo: "assets/radio_tn.png"));
   }
 }

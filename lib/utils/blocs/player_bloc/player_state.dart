@@ -2,7 +2,7 @@ import 'package:flute_music_player/flute_music_player.dart';
 
 class PlayerState {
   bool isPlaying;
-  Song currentSong;
+  dynamic currentSong;
   List<Song> songs;
   int repeatType;
   bool shuffle, bottomSheetExpanded;

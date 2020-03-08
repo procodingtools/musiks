@@ -3,6 +3,7 @@ import 'dart:math';
 import 'dart:ui';
 
 import 'package:date_format/date_format.dart';
+import 'package:flute_music_player/flute_music_player.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -15,14 +16,20 @@ import 'package:musiks/utils/res/app_colors.dart';
 import 'package:musiks/utils/res/dimens.dart';
 import 'package:musiks/utils/utils.dart';
 import 'package:rubber/rubber.dart';
+import 'package:musiks/utils/entities/media.dart' as R;
+import 'package:flutter_advanced_networkimage/provider.dart';
 
 class PlayerBottomSheet extends StatefulWidget {
-  final TickerProvider tickerProvider;
+  final TickerProvider vsync;
   final PlayerBloc bloc;
   final bool overrideBackBtn;
 
-  const PlayerBottomSheet({Key key,@required this.tickerProvider,@required this.bloc, this.overrideBackBtn: false, })
-      : super(key: key);
+  const PlayerBottomSheet({
+    Key key,
+    @required this.vsync,
+    @required this.bloc,
+    this.overrideBackBtn: false,
+  }) : super(key: key);
 
   createState() => _PlayerBottomSheetState();
 }
@@ -35,13 +42,14 @@ class _PlayerBottomSheetState extends State<PlayerBottomSheet> {
   final _audioPlayer = Utils.audioPlayer;
   Animation _vinylRotationAnim;
   PlayerBloc _playerBloc;
+  final _moveTaskToBackChannel = MethodChannel("android_app_retain");
 
   @override
   void dispose() {
     // TODO: implement dispose
-    _rubberController.dispose();
+    //_rubberController.dispose();
     _vinylRotationController.dispose();
-    _playerBloc.dispose();
+    //_playerBloc.dispose();
     super.dispose();
   }
 
@@ -54,20 +62,20 @@ class _PlayerBottomSheetState extends State<PlayerBottomSheet> {
     _playerBloc = widget.bloc;
 
     _rubberController = RubberAnimationController(
-      vsync: widget.tickerProvider,
+      vsync: widget.vsync,
       lowerBoundValue: AnimationControllerValue(percentage: 0.13),
       //upperBoundValue: AnimationControllerValue(pixel: 100),
-      upperBoundValue: AnimationControllerValue(percentage: 1.0),
+      upperBoundValue: AnimationControllerValue(percentage: 1),
       duration: Duration(milliseconds: 100),
     );
 
     //init vinyl animation
     _vinylRotationController = AnimationController(
-        vsync: widget.tickerProvider, duration: Duration(seconds: 11));
+        vsync: widget.vsync, duration: Duration(seconds: 11));
 
     _rubberController.addListener(() {
       setState(() {
-        if (_rubberController.value > .13)
+        if (_rubberController.value > .2)
           _playerBloc.dispatch(ExpandBottomSheet(true));
         else
           _playerBloc.dispatch(ExpandBottomSheet(false));
@@ -78,6 +86,20 @@ class _PlayerBottomSheetState extends State<PlayerBottomSheet> {
         Tween(begin: .0, end: 6.28319).animate(_vinylRotationController);
 
     _setMediaNotificationsListeners();
+
+    Utils.audioPlayer.setOnHeadsetButtonClick((action) {
+      if (action == 1)
+        _playPause(_playerBloc.currentState);
+      else if (action == 2)
+        _nextSong(_playerBloc.currentState);
+      else if (action == 3) _previousSong(_playerBloc.currentState);
+    });
+
+    Utils.audioPlayer.setOnHeadsetPlugListener((status){
+      if (!status && _playerBloc.currentState.isPlaying)
+        _playPause(_playerBloc.currentState);
+        //_playerBloc.dispatch(SetIsPlaying(!status));
+    });
   }
 
   void _setAudioPlayerListeners(PlayerState state) {
@@ -101,6 +123,7 @@ class _PlayerBottomSheetState extends State<PlayerBottomSheet> {
 
   _setMediaNotificationsListeners() {
     MediaNotification.setListener('pause', () {
+      print("pause");
       setState(() {
         _playerBloc.dispatch(SetIsPlaying(false));
       });
@@ -111,10 +134,17 @@ class _PlayerBottomSheetState extends State<PlayerBottomSheet> {
       setState(() {
         _playerBloc.dispatch(SetIsPlaying(true));
       });
-      Utils.audioPlayer.play(_playerBloc.currentState.currentSong.uri);
+      if (_playerBloc.currentState.currentSong is Song)
+        Utils.audioPlayer.play(
+          _playerBloc.currentState.currentSong.uri,
+        );
+      else if (_playerBloc.currentState.currentSong is R.Media)
+        Utils.audioPlayer
+            .play(_playerBloc.currentState.currentSong.url, isLocal: false);
     });
 
     MediaNotification.setListener('next', () {
+      print('next');
       _nextSong(_playerBloc.currentState);
     });
 
@@ -150,8 +180,7 @@ class _PlayerBottomSheetState extends State<PlayerBottomSheet> {
     state.currentSong = state.songs[index];
     Utils.audioPlayer.play(state.currentSong.uri);
     MediaNotification.show(
-        title: state.currentSong.title,
-        author: state.currentSong.album);
+        title: state.currentSong.title, author: state.currentSong.album);
   }
 
   void _playAt(int index, PlayerState state) {
@@ -159,8 +188,7 @@ class _PlayerBottomSheetState extends State<PlayerBottomSheet> {
     state.currentSong = state.songs[index];
     Utils.audioPlayer.play(state.currentSong.uri);
     MediaNotification.show(
-        title: state.currentSong.title,
-        author: state.currentSong.album);
+        title: state.currentSong.title, author: state.currentSong.album);
   }
 
   void _previousSong(PlayerState state) {
@@ -174,8 +202,7 @@ class _PlayerBottomSheetState extends State<PlayerBottomSheet> {
     state.currentSong = state.songs[index];
     Utils.audioPlayer.play(state.currentSong.uri);
     MediaNotification.show(
-        title: state.currentSong.title,
-        author: state.currentSong.album);
+        title: state.currentSong.title, author: state.currentSong.album);
   }
 
   @override
@@ -185,14 +212,18 @@ class _PlayerBottomSheetState extends State<PlayerBottomSheet> {
       _vinylRotationController.repeat();
     else
       _vinylRotationController.stop();
+
     // TODO: implement build
     return WillPopScope(
       onWillPop: () {
-        if (_rubberController.value > .13)
+        if (_rubberController.value > .19)
           _rubberController.collapse();
-        else{
-          if (!widget.overrideBackBtn)
-            Navigator.pop(context);
+        else {
+          if (!widget.overrideBackBtn) Navigator.pop(context);
+          else {
+            _moveTaskToBackChannel.invokeMethod("sendToBackground");
+            return Future.value(false);
+          }
         }
       },
       child: RubberBottomSheet(
@@ -214,10 +245,10 @@ class _PlayerBottomSheetState extends State<PlayerBottomSheet> {
             ),
             child: Padding(
               padding: EdgeInsets.all(
-                _rubberController.value > 0.17 ? .0 : 8.0,
+                _rubberController.value > 0.15 ? .0 : 8.0,
               ),
               child: IndexedStack(
-                index: _rubberController.value > 0.17 ? 1 : 0,
+                index: _rubberController.value > 0.15 ? 1 : 0,
                 children: <Widget>[
                   _renderBottomSheetHeader(state),
                   _renderBottomSheetContent(state),
@@ -229,146 +260,156 @@ class _PlayerBottomSheetState extends State<PlayerBottomSheet> {
   }
 
   Widget _renderBottomSheetHeader(PlayerState state) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 5.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisSize: MainAxisSize.max,
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: <Widget>[
-          Container(
-            width: 50.0,
-            height: 50.0,
-            child: CircleAvatar(
-              backgroundImage: state.currentSong?.albumArt != null
-                  ? FileImage(IO.File(state.currentSong.albumArt))
-                  : AssetImage("assets/musiks_disk_sticker.png"),
-            ),
-          ),
-          SizedBox(
-            width: 200.0,
-            child: ScrollableText(
-                direction: Axis.horizontal,
-                animationDuration: Duration(seconds: 10),
-                backDuration: Duration(seconds: 8),
-                pauseDuration: Duration(seconds: 2),
-                child: Text(
-                  state.currentSong?.title ?? 'No media',
-                  style: TextStyle(
-                    color: AppColors.white,
-                    fontFamily: 'montserrat',
-                  ),
-                  maxLines: 1,
-                )),
-          ),
-          InkWell(
-            onTap: () {
-              _playPause(state);
-            },
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Icon(
-                state.isPlaying
-                    ? FontAwesomeIcons.pauseCircle
-                    : FontAwesomeIcons.playCircle,
-                color: AppColors.white,
+    return InkWell(
+      onTap: () {
+          _rubberController.expand();
+          _playerBloc.dispatch(ExpandBottomSheet(true));
+      },
+      child: Center(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisSize: MainAxisSize.max,
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: <Widget>[
+            Container(
+              width: 50.0,
+              height: 50.0,
+              child: CircleAvatar(
+                backgroundColor: AppColors.purple,
+                backgroundImage: state.currentSong != null
+                    ? state.currentSong is Song
+                        ? state.currentSong?.albumArt != null
+                            ? FileImage(IO.File(state.currentSong.albumArt))
+                            : AssetImage("assets/musiks_disk_sticker.png")
+                        : AdvancedNetworkImage(
+                            state.currentSong?.logo,
+                            useDiskCache: true,
+                          )
+                    : AssetImage("assets/musiks_disk_sticker.png"),
               ),
             ),
-          ),
-        ],
+            SizedBox(
+              width: 200.0,
+              child: ScrollableText(
+                  direction: Axis.horizontal,
+                  animationDuration: Duration(seconds: 10),
+                  backDuration: Duration(seconds: 8),
+                  pauseDuration: Duration(seconds: 2),
+                  child: Text(
+                    state.currentSong?.title ?? 'No media',
+                    style: TextStyle(
+                      color: AppColors.white,
+                      fontFamily: 'montserrat',
+                    ),
+                    maxLines: 1,
+                  )),
+            ),
+            InkWell(
+              onTap: () {
+                _playPause(state);
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Icon(
+                  state.isPlaying
+                      ? FontAwesomeIcons.pauseCircle
+                      : FontAwesomeIcons.playCircle,
+                  color: AppColors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _renderBottomSheetContent(PlayerState state) {
     return Container(
-      width: double.infinity,
-      height: double.infinity,
+      //width: double.infinity,
+      height: MediaQuery.of(context).size.height * _rubberController.value,
       decoration: BoxDecoration(
+        color: AppColors.purple,
         image: DecorationImage(
-            image:
-                state.currentSong != null && state.currentSong.albumArt != null
-                    ? FileImage(IO.File(state.currentSong.albumArt))
-                    : AssetImage("assets/musiks_disk_sticker.png"),
+            image: state.currentSong != null
+                ? state.currentSong is Song
+                    ? state.currentSong?.albumArt != null
+                        ? FileImage(IO.File(state.currentSong.albumArt))
+                        : AssetImage("assets/musiks_disk_sticker.png")
+                    : AdvancedNetworkImage(
+                        state.currentSong?.logo,
+                        useDiskCache: true,
+                      )
+                : AssetImage("assets/musiks_disk_sticker.png"),
             fit: BoxFit.cover),
       ),
       child: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(color: Colors.black26),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaY: 20.0, sigmaX: 20.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.max,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: <Widget>[
-              Container(
-                height: 1.0,
-                child: Row(
-                  mainAxisSize: MainAxisSize.max,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <Widget>[
-                    Text(" "),
-                    Text(" "),
-                  ],
+        decoration: BoxDecoration(color: Colors.black26, ),
+        child: ClipRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaY: _rubberController.value * 20.0, sigmaX: _rubberController.value * 20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: <Widget>[
+                SizedBox(
+                  height: 50.0,
                 ),
-              ),
-              SizedBox(
-                height: 50.0,
-              ),
-              _renderRotatedVinyl(state),
-              Padding(
-                padding: const EdgeInsets.only(top: 20.0),
-                child: Text(
-                  state.currentSong?.title ?? 'No media',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                      fontFamily: "montserrat",
-                      fontSize: 20.0,
-                      color: AppColors.white),
+                _renderRotatedVinyl(state),
+                Padding(
+                  padding: const EdgeInsets.only(top: 20.0),
+                  child: Text(
+                    state.currentSong?.title ?? 'No media',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontFamily: "montserrat",
+                        fontSize: 20.0,
+                        color: AppColors.white),
+                  ),
                 ),
-              ),
-              Expanded(child: Container()),
-              Padding(
-                padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 15.0),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: <Widget>[
-                    SizedBox(
-                      child: _renderPositionTime(),
-                      width: Dimens.width * .09,
-                    ),
-                    Expanded(
-                      child: Slider(
-                          min: .0,
-                          max: double.parse(
-                              '${state.currentSong?.duration ?? 1.0}'),
-                          activeColor: AppColors.white,
-                          inactiveColor: AppColors.white,
-                          value: _sliderValue,
-                          onChanged: (v) {
-                            if (state.currentSong != null)
-                              setState(() {
-                                _sliderValue = v;
-                                Utils.audioPlayer.seek(v / 1000);
-                              });
-                          }),
-                    ),
-                    SizedBox(
-                      child: _renderDuration(state),
-                      width: Dimens.width * .09,
-                    )
-                  ],
+                Expanded(child: Container()),
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 15.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: <Widget>[
+                      SizedBox(
+                        child: _renderPositionTime(),
+                        width: Dimens.width * .09,
+                      ),
+                      Expanded(
+                        child: Slider(
+                            min: .0,
+                            max: state.currentSong != null
+                                ? state.currentSong is R.Media
+                                    ? 1.0
+                                    : double.parse(
+                                        '${state.currentSong?.duration}')
+                                : 1.0,
+                            activeColor: AppColors.white,
+                            inactiveColor: AppColors.white,
+                            value: state.currentSong is R.Media ? .0 : _sliderValue,
+                            onChanged: (v) {
+                              if (state.currentSong != null)
+                                if (state.currentSong is Song)
+                                setState(() {
+                                  _sliderValue = v;
+                                  Utils.audioPlayer.seek(v / 1000);
+                                });
+                            }),
+                      ),
+                      SizedBox(
+                        child: _renderDuration(state),
+                        width: Dimens.width * .09,
+                      )
+                    ],
+                  ),
                 ),
-              ),
-              _renderBottomSheetButtons(state),
-              Expanded(child: Container()),
-              Text(
-                " ",
-                style: TextStyle(fontSize: 0.1),
-              )
-            ],
+                _renderBottomSheetButtons(state),
+                Expanded(child: Container()),
+              ],
+            ),
           ),
         ),
       ),
@@ -379,7 +420,7 @@ class _PlayerBottomSheetState extends State<PlayerBottomSheet> {
     return Container(
         decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: AppColors.yellow, width: 3.0)),
+        ),
         height: Dimens.width * .65,
         width: Dimens.width * .65,
         child: AnimatedBuilder(
@@ -401,12 +442,17 @@ class _PlayerBottomSheetState extends State<PlayerBottomSheet> {
                         width: Dimens.width * .23,
                         height: Dimens.width * .23,
                         child: CircleAvatar(
-                          backgroundImage: state.currentSong != null &&
-                                  state.currentSong.albumArt != null
+                          backgroundColor: AppColors.purple,
+                          backgroundImage: state.currentSong != null
+                              ? state.currentSong is Song
+                              ? state.currentSong?.albumArt != null
                               ? FileImage(IO.File(state.currentSong.albumArt))
-                              : AssetImage(
-                                  "assets/musiks_disk_sticker.png",
-                                ),
+                              : AssetImage("assets/musiks_disk_sticker.png")
+                              : AdvancedNetworkImage(
+                            state.currentSong?.logo,
+                            useDiskCache: true,
+                          )
+                              : AssetImage("assets/musiks_disk_sticker.png"),
                         ),
                       ),
                     ],
@@ -426,14 +472,16 @@ class _PlayerBottomSheetState extends State<PlayerBottomSheet> {
         children: <Widget>[
           InkWell(
             onTap: () {
-              int repeatType = state.repeatType;
-              if (repeatType == 2)
-                repeatType = 0;
-              else
-                repeatType++;
-              setState(() {
-                _playerBloc.dispatch(SetRepeatType(repeatType));
-              });
+              if (! (state.currentSong is R.Media)) {
+                int repeatType = state.repeatType;
+                if (repeatType == 2)
+                  repeatType = 0;
+                else
+                  repeatType++;
+                setState(() {
+                  _playerBloc.dispatch(SetRepeatType(repeatType));
+                });
+              }
             },
             child: Padding(
               padding: const EdgeInsets.all(8.0),
@@ -445,6 +493,7 @@ class _PlayerBottomSheetState extends State<PlayerBottomSheet> {
                         : "assets/no_repeat.png",
                 width: 20,
                 fit: BoxFit.fill,
+                color: state.currentSong is R.Media ? Colors.black38 : null,
               ),
             ),
           ),
@@ -458,6 +507,7 @@ class _PlayerBottomSheetState extends State<PlayerBottomSheet> {
                   "assets/previews.png",
                   width: 40,
                   fit: BoxFit.fill,
+                  color: state.currentSong is R.Media ? Colors.black38 : null,
                 ),
               ),
               InkWell(
@@ -479,12 +529,14 @@ class _PlayerBottomSheetState extends State<PlayerBottomSheet> {
                   "assets/next.png",
                   width: 40,
                   fit: BoxFit.fill,
+                  color: state.currentSong is R.Media ? Colors.black38 : null,
                 ),
               ),
             ],
           ),
           InkWell(
             onTap: () {
+              if (state.currentSong is Song)
               setState(() {
                 _playerBloc.dispatch(ToggleShuffle());
               });
@@ -495,6 +547,7 @@ class _PlayerBottomSheetState extends State<PlayerBottomSheet> {
                 state.shuffle ? "assets/random.png" : "assets/equal.png",
                 width: 20,
                 fit: BoxFit.fill,
+                color: state.currentSong is R.Media ? Colors.black38 : null,
               ),
             ),
           ),
@@ -513,7 +566,7 @@ class _PlayerBottomSheetState extends State<PlayerBottomSheet> {
         0,
         0,
         0,
-      ).add(Duration(milliseconds: state.currentSong.duration));
+      ).add(Duration(milliseconds: state.currentSong is Song ? state.currentSong.duration : 0));
     else
       date = DateTime(
         0,
@@ -563,13 +616,13 @@ class _PlayerBottomSheetState extends State<PlayerBottomSheet> {
     setState(() {
       if (!state.isPlaying && state.currentSong != null) {
         _playerBloc.dispatch(SetIsPlaying(true));
-        Utils.showNotif(state.currentSong.title, state.currentSong.album, true);
-        _audioPlayer.play(state.currentSong.uri);
+        Utils.showNotif(state.currentSong.title, state.currentSong is Song ? state.currentSong.album : state.currentSong.of, true);
+        _audioPlayer.play( state.currentSong is Song ? state.currentSong.uri : state.currentSong.url);
         _vinylRotationController.repeat();
       } else if (state.isPlaying) {
         _playerBloc.dispatch(SetIsPlaying(false));
         Utils.showNotif(
-            state.currentSong.title, state.currentSong.album, false);
+            state.currentSong.title, state.currentSong is Song ? state.currentSong.album : state.currentSong.of, false);
         _audioPlayer.pause();
         _vinylRotationController.stop();
       }

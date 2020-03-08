@@ -1,4 +1,4 @@
-import 'dart:ui';
+import 'dart:ui' show Color;
 
 class AppColors {
   static final yellow = Color(0xffe5d200);
