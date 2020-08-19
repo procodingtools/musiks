@@ -17,8 +17,8 @@ samples, guidance on mobile development, and a full API reference.
 
 
 **Home screen**
-<img src="https://github.com/procodingtools/musiks/blob/master/screenshots/Screenshot_20200309-003740.png" width="100" height="180"/>
-![Home screen](https://github.com/procodingtools/musiks/blob/master/screenshots/Screenshot_20200309-003740.png?raw=true =100x180)
+<br/>
+<img src="https://github.com/procodingtools/musiks/blob/master/screenshots/Screenshot_20200309-003740.png" width="280" height="500"/>
 
 ![enter image description here](https://github.com/procodingtools/musiks/blob/master/screenshots/Screenshot_20200309-003800.png?raw=true)
 **Albums view**
