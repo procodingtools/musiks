@@ -17,14 +17,20 @@ samples, guidance on mobile development, and a full API reference.
 
 
 **Home screen**
-<br/>
+<br/><br/><br/>
 <img src="https://github.com/procodingtools/musiks/blob/master/screenshots/Screenshot_20200309-003740.png" width="350"/> <img src="https://github.com/procodingtools/musiks/blob/master/screenshots/Screenshot_20200309-003800.png" width="350"/>
 
+<br/><br/><br/><br/><br/>
 **Albums view**
-![enter image description here](https://github.com/procodingtools/musiks/blob/master/screenshots/Screenshot_20200309-003751.png?raw=true)
+<br/><br/><br/>
+<img src="https://github.com/procodingtools/musiks/blob/master/screenshots/Screenshot_20200309-003751.png" width="350"/>
 
+<br/><br/><br/><br/><br/>
 **Files view**
-![enter image description here](https://github.com/procodingtools/musiks/blob/master/screenshots/Screenshot_20200309-003812.png?raw=true)
+<br/><br/><br/>
+<img src="https://github.com/procodingtools/musiks/blob/master/screenshots/Screenshot_20200309-003812.png" width="350"/>
 
+<br/><br/><br/><br/><br/>
 **Player view**
-![enter image description here](https://github.com/procodingtools/musiks/blob/master/screenshots/Screenshot_20200309-003824.png?raw=true)
+<br/><br/><br/>
+<img src="https://github.com/procodingtools/musiks/blob/master/screenshots/Screenshot_20200309-003824.png" width="350"/>
